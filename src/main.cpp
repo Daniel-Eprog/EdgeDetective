@@ -2,7 +2,7 @@
 
 int main()
 {
-    auto window = sf::RenderWindow{ { 1920u, 1080u }, "CMake SFML Project" };
+    auto window = sf::RenderWindow{ { 1920u, 1080u }, "Edge Detective" };
     window.setFramerateLimit(144);
 
     while (window.isOpen())
@@ -19,3 +19,6 @@ int main()
         window.display();
     }
 }
+
+//cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+//cmake --build build
