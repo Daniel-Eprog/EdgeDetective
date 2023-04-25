@@ -1,11 +1,12 @@
-#ifndef TGAIMG_H
-#define TGAIMG_H
+#ifndef TGA_H
+#define TGA_H
 
 #include <iostream>
 #include <algorithm>
 #include <map>
 #include <iomanip>
 #include <fstream>
+#include <vector>
 
 using namespace std;
 
@@ -45,19 +46,21 @@ class TGAimg
             char imageDescriptor;
             
         };
-
+      
         void loadIMG(string file);//loads image from TGA file
         void exportIMG(string file) const;//exports an image as TGA file
         void getHeader() const; //prints header information
         void convertGrayScale(); //converts the desired image into grayscale
+        void gaussianBlur();
+        void prewittEdgeDetection();
+        void convolve(vector<vector<float>> convolutionKernel);
 
-    private:
-        IMGheader imageHeader; //stores header information in custom struct 
-        map<int, Pixel> image; //stores pixel information in map
-
+        private:
+            IMGheader imageHeader; //stores header information in custom struct 
+            vector<vector<Pixel>> image; //stores pixel information in map
 };
 
-//loads image from TGA file
+
 void TGAimg::loadIMG(string file)
 {
     //read in file
@@ -83,15 +86,22 @@ void TGAimg::loadIMG(string file)
         fileToOpen.read(reinterpret_cast<char*>(&this->imageHeader.imageDescriptor), sizeof(this->imageHeader.imageDescriptor));
     }
 
-    for (int i = 0; i < (int)this->imageHeader.width * (int)this->imageHeader.height; i++)
+    for (int i = 0; i < (int)this->imageHeader.height; i++)
     {
-        unsigned char blue;
-        unsigned char green;
-        unsigned char red;
-        fileToOpen.read(reinterpret_cast<char*>(&blue), sizeof(blue));
-        fileToOpen.read(reinterpret_cast<char*>(&green), sizeof(green));
-        fileToOpen.read(reinterpret_cast<char*>(&red), sizeof(red));
-        this->image.emplace(i, Pixel(blue, green, red));
+        vector<Pixel> nextRow = {};
+        for(int j = 0; j < (int)this->imageHeader.width; j++)
+        {
+            unsigned char blue;
+            unsigned char green;
+            unsigned char red;
+            fileToOpen.read(reinterpret_cast<char*>(&blue), sizeof(blue));
+            fileToOpen.read(reinterpret_cast<char*>(&green), sizeof(green));
+            fileToOpen.read(reinterpret_cast<char*>(&red), sizeof(red));
+            nextRow.push_back(Pixel(blue, green, red));
+        }
+
+        this->image.push_back(nextRow);
+        nextRow = {};
     }
 
     //close image file
@@ -133,31 +143,276 @@ void TGAimg::exportIMG(string file) const
     fileToWrite.write((char*) &imageHeader.bitsPerPixel, sizeof(imageHeader.bitsPerPixel));
     fileToWrite.write((char*) &imageHeader.imageDescriptor, sizeof(imageHeader.imageDescriptor));
     map<int, Pixel>::iterator iter;
-    for(auto iter = this->image.begin(); iter != this->image.end(); iter++)
+    for(int i = 0; i < (int)this->imageHeader.height; ++i)
     {
-        fileToWrite.write((char*) &iter->second.blue, sizeof(iter->second.blue));
-        fileToWrite.write((char*) &iter->second.green, sizeof(iter->second.green));
-        fileToWrite.write((char*) &iter->second.red, sizeof(iter->second.red));
+        for(int j = 0; j < (int)this->imageHeader.width; ++j)
+        {
+        fileToWrite.write((char*) &this->image[i][j].blue, sizeof(this->image[i][j].blue));
+        fileToWrite.write((char*) &this->image[i][j].green, sizeof(this->image[i][j].green));
+        fileToWrite.write((char*) &this->image[i][j].red, sizeof(this->image[i][j].red));
+        }
     }
 }
 
-//converts TGAimg to grayscale using luminosity method 0.21 R + 0.72 G + 0.07 B
+
+
 void TGAimg::convertGrayScale()
 {
-    map<int, Pixel>::iterator iter;
-
     float grayScaleValue = 0;
 
-    for(iter = this->image.begin(); iter != this->image.end(); iter++)
+    for(int i = 0; i < this->imageHeader.height; ++i)
     {
-        grayScaleValue = (0.21 * iter->second.red) + (0.72 * iter->second.green) + (0.07 * iter->second.blue); 
-        iter->second.blue = grayScaleValue;
-        iter->second.green = grayScaleValue;
-        iter->second.red = grayScaleValue;
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            grayScaleValue = (0.21 * this->image[i][j].red) + (0.72 * this->image[i][j].green) + (0.07 * this->image[i][j].blue); 
+            this->image[i][j].blue = grayScaleValue;
+            this->image[i][j].green = grayScaleValue;
+            this->image[i][j].red = grayScaleValue;
+        }
 
     }
 
 }
 
+void TGAimg::prewittEdgeDetection()
+{
+    vector<vector<float>> verticalOperator = {{-1, 0, 1}, {-1, 0, 1}, {-1, 0, 1}};
+    vector<vector<float>> horizontalOperator = {{-1, -1, -1}, {0, 0, 0}, {1, 1, 1}};
+    this->convertGrayScale();
+    this->gaussianBlur();
+    this->convolve(horizontalOperator);
+    // this->convolve(verticalOperator);
+
+}
+
+void TGAimg::convolve(vector<vector<float>> convolutionKernel)
+{
+
+    vector<Pixel> newImage = {};
+
+    for(int i = 0; i < this->imageHeader.height; ++i)
+    {
+        vector<Pixel> newRow = {};
+
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            int newPixelValue = 0;
+
+            if(j == 0)
+            {
+            
+                if(i == 0)
+                {
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                    newPixelValue += this->image[i +1][j + 1].red * convolutionKernel[2][2];
+                    if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else if(i == imageHeader.height - 1)
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i - 1][j + 1].red * convolutionKernel[0][2];
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                   newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i - 1][j + 1].red * convolutionKernel[0][2];
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                    newPixelValue += this->image[i +1][j + 1].red * convolutionKernel[2][2];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+
+            }
+            else if(j == imageHeader.width - 1)
+            {
+                if(i == 0)
+                {
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i + 1][j - 1].red * convolutionKernel[2][0];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else if(i == imageHeader.height - 1)
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i - 1][j - 1].red * convolutionKernel[0][0];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i - 1][j - 1].red * convolutionKernel[0][0];
+                    newPixelValue += this->image[i + 1][j - 1].red * convolutionKernel[2][0];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+
+            }
+            else
+            {
+                 if(i == 0)
+                {
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                    newPixelValue += this->image[i +1][j + 1].red * convolutionKernel[2][2];
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i + 1][j - 1].red * convolutionKernel[2][0];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else if(i == imageHeader.height - 1)
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i - 1][j - 1].red * convolutionKernel[0][0];
+                    newPixelValue += this->image[i - 1][j + 1].red * convolutionKernel[0][2];
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                     if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+                }
+                else
+                {
+                    newPixelValue += this->image[i - 1][j].red * convolutionKernel[0][1];
+                    newPixelValue += this->image[i][j - 1].red * convolutionKernel[1][0];
+                    newPixelValue += this->image[i - 1][j - 1].red * convolutionKernel[0][0];
+                    newPixelValue += this->image[i - 1][j + 1].red * convolutionKernel[0][2];
+                    newPixelValue += this->image[i][j + 1].red * convolutionKernel[1][2];
+                    newPixelValue += this->image[i + 1][j - 1].red * convolutionKernel[2][0];
+                    newPixelValue += this->image[i + 1][j].red * convolutionKernel[2][1];
+                    newPixelValue += this->image[i + 1][j + 1].red * convolutionKernel[2][2];
+                    if(newPixelValue > 255)
+                    {
+                        newPixelValue = 255;
+                    }
+                    else if(newPixelValue < 0)
+                    {
+                        newPixelValue = 0;
+                    }
+                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
+                    // this->image[i][j].red = newPixelValue;
+                    // this->image[i][j].blue = newPixelValue;
+                    // this->image[i][j].green = newPixelValue;
+
+                }
+
+
+            }
+
+
+        }
+    }
+
+    int count = 0;
+
+      for(int i = 0; i < this->imageHeader.height; ++i)
+    {
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            this->image[i][j].red = newImage[count].red;
+            this->image[i][j].blue = newImage[count].blue;
+            this->image[i][j].green = newImage[count].green;
+            count += 1;
+        }
+
+    }
+
+}
+
+void TGAimg::gaussianBlur()
+{
+    vector<vector<float>> gaussianKernel = {{0.075f, 0.124f, 0.075f},{0.124f, .204f, 0.124f},{0.075f, 0.0124f, 0.075f}};
+    // this->convolve(gauss);
+}
 
 #endif
