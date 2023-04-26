@@ -1,71 +1,43 @@
-#include <iostream>
-#include <SFML/Graphics.hpp>
-#include "tga.h"
+/**/
 
-using namespace std;
+
+
+#include "tgaimg.h"
+#include <string>
 
 int main()
 {
-    auto window = sf::RenderWindow{ { 1280u, 720u }, "Edge Detective" };
-    auto sidePanel = sf::RenderWindow{{400u, 600u}, "Options Menu"};
-    sidePanel.setFramerateLimit(60);
-    window.setFramerateLimit(60);
+    //Welcome message
+    cout << "***************************************************" << endl;
+    cout << "*            Welcome to Edge Detective            *" << endl;
+    cout << "*  Your one stop shop c++ edge detection library  *" << endl;
+    cout << "*                 Please Stand By...              *" << endl;
+    cout << "***************************************************" << endl;
 
-    sf::Font font;
-    if(!font.loadFromFile("fonts/arial.ttf"))
-    {
-        cout <<"Error font could not be loaded" << endl;
-    }
+    /*Part I*/
+    TGAimg part1Img1;
+    part1Img1.loadIMG("input/car.tga");
+    part1Img1.convertGrayScale();
+    part1Img1.exportIMG("output/postGrayScale4.tga");
+    part1Img1.gaussianBlur();
+    part1Img1.exportIMG("output/postGauss4.tga");
+    part1Img1.sobelEdgeDetection();
+    part1Img1.exportIMG("output/postSobel4.tga");
+    part1Img1.nonMaxSuppression();
+    part1Img1.exportIMG("output/postSuppression4.tga");
+    part1Img1.doubleThreshold();
+    part1Img1.exportIMG("output/postThreshold4.tga");
+    part1Img1.hysteresis();
+    part1Img1.exportIMG("output/postHysteresis4.tga");
 
-    sf::Text text;
+    
 
-    // select the font
-    text.setFont(font); // font is a sf::Font
+    cout << "***************************************************" << endl;
+    cout << "*                Images Processed :)              *" << endl;
+    cout << "*            Testing Images for Fidelity          *" << endl;
+    cout << "*                Please Stand By...               *" << endl;
+    cout << "***************************************************" << endl;
 
-    // set the string to display
-    text.setString("Hello world");
-
-    // set the character size
-    text.setCharacterSize(200); // in pixels, not points!
-
-    // set the color
-    text.setFillColor(sf::Color::Red);
-
-    // set the text style
-    text.setStyle(sf::Text::Bold | sf::Text::Underlined);
-
-
-
-    while (window.isOpen())
-    {
-        for (auto event = sf::Event{}; window.pollEvent(event);)
-        {
-            if (event.type == sf::Event::Closed)
-            {
-                window.close();
-            }
-        }
-
-        window.clear();
-        window.display();
-    }
-
-    while (sidePanel.isOpen())
-    {
-          for (auto event = sf::Event{}; sidePanel.pollEvent(event);)
-        {
-            if (event.type == sf::Event::Closed)
-            {
-                sidePanel.close();
-            }
-        }
-
-        sidePanel.clear();
-        sidePanel.draw(text);
-        sidePanel.display();
-
-    }
+    
+     return 0;
 }
-
-//cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-//cmake --build build
