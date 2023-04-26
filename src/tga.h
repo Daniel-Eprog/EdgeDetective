@@ -176,16 +176,44 @@ void TGAimg::convertGrayScale()
 
 void TGAimg::prewittEdgeDetection()
 {
+    vector<Pixel> Gx = {};
+    vector<Pixel> Gy = {};
+    vector<Pixel> G = {};
+
     vector<vector<float>> verticalOperator = {{-1, 0, 1}, {-1, 0, 1}, {-1, 0, 1}};
     vector<vector<float>> horizontalOperator = {{-1, -1, -1}, {0, 0, 0}, {1, 1, 1}};
     this->convertGrayScale();
     this->gaussianBlur();
-    this->convolve(horizontalOperator);
-    // this->convolve(verticalOperator);
+    Gx = this->convolve(horizontalOperator);
+    Gy = this->convolve(verticalOperator);
+
+    for(int i = 0; i < Gx.size(); ++i)
+    {
+        int magnitude = 0;
+        magnitude = sqrt(pow(Gx[i].red, 2) + pow(Gy[i].red, 2));
+        if(magnitude > 255)
+        {
+            magnitude = 255;
+        }
+        G.push_back(Pixel(magnitude, magnitude, magnitude));
+    }
+
+    int count = 0;
+
+    for(int i = 0; i < this->imageHeader.height; ++i)
+    {
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            this->image[i][j].red = G[count].red;
+            this->image[i][j].blue = G[count].blue;
+            this->image[i][j].green = G[count].green;
+            count += 1;
+        }
+    }
 
 }
 
-void TGAimg::convolve(vector<vector<float>> convolutionKernel)
+vector<TGAimg::Pixel> TGAimg::convolve(vector<vector<float>> convolutionKernel)
 {
 
     vector<Pixel> newImage = {};
@@ -215,9 +243,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else if(i == imageHeader.height - 1)
                 {
@@ -233,9 +258,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                    newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else
                 {
@@ -253,9 +275,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
 
             }
@@ -275,9 +294,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                      newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else if(i == imageHeader.height - 1)
                 {
@@ -293,9 +309,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else
                 {
@@ -313,9 +326,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
 
             }
@@ -337,9 +347,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else if(i == imageHeader.height - 1)
                 {
@@ -357,9 +364,6 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
                 }
                 else
                 {
@@ -380,39 +384,34 @@ void TGAimg::convolve(vector<vector<float>> convolutionKernel)
                         newPixelValue = 0;
                     }
                     newImage.push_back(Pixel(newPixelValue, newPixelValue, newPixelValue));
-                    // this->image[i][j].red = newPixelValue;
-                    // this->image[i][j].blue = newPixelValue;
-                    // this->image[i][j].green = newPixelValue;
-
                 }
-
-
             }
-
-
         }
     }
 
-    int count = 0;
-
-      for(int i = 0; i < this->imageHeader.height; ++i)
-    {
-        for(int j = 0; j < this->imageHeader.width; ++j)
-        {
-            this->image[i][j].red = newImage[count].red;
-            this->image[i][j].blue = newImage[count].blue;
-            this->image[i][j].green = newImage[count].green;
-            count += 1;
-        }
-
-    }
+    return newImage;
 
 }
 
 void TGAimg::gaussianBlur()
 {
+    vector<Pixel> blurredImage;
     vector<vector<float>> gaussianKernel = {{0.075f, 0.124f, 0.075f},{0.124f, .204f, 0.124f},{0.075f, 0.0124f, 0.075f}};
-    // this->convolve(gauss);
+    blurredImage = this->convolve(gaussianKernel);
+
+    int count = 0;
+
+    for(int i = 0; i < this->imageHeader.height; ++i)
+    {
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            this->image[i][j].red = blurredImage[count].red;
+            this->image[i][j].blue = blurredImage[count].blue;
+            this->image[i][j].green = blurredImage[count].green;
+            count += 1;
+        }
+
+    }
 }
 
 #endif
