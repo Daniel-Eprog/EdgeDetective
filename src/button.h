@@ -2,25 +2,28 @@
 #define BUTTON_H
 
 #include <SFML/Graphics.hpp>
-#include <utility>
+#include <functional>
 
 const sf::Color DEFAULT_COLOR = sf::Color(120, 120, 123, 255);
-const sf::Color ON_HOVER_COLOR = sf::Color(135, 135, 138, 255);
-const sf::Color ON_CLICKED_COLOR = sf::Color(100, 100, 103, 255);
+const sf::Color ON_HOVER_COLOR = sf::Color(140, 140, 143, 255);
+const sf::Color ON_CLICKED_COLOR = sf::Color(80, 80, 83, 255);
 
 class Button: public sf::Drawable
 {
 public:
+    enum class Status {Default, Hover, Clicked, Disabled};
 
-    enum class Status {Default, Hover, Clicked};
+private:
 
     sf::RectangleShape box;
     sf::Text text;
     Status status;
+    void(*functionOnClick)();
 
-    Button(sf::Text buttonText, const sf::Vector2f& position, const sf::Vector2f& size): text(std::move(buttonText)), status(Status::Default)
+public:
+    Button(sf::Text buttonText, const sf::Vector2f& position, const sf::Vector2f& size, void(*buttonFunction)()):
+    box(sf::RectangleShape(size)), text(std::move(buttonText)), status(Status::Default), functionOnClick(buttonFunction)
     {
-        box = sf::RectangleShape(size);
         box.setPosition(position);
         box.setOrigin(box.getLocalBounds().getPosition() + (box.getGlobalBounds().getSize() * 0.5f));
         box.setFillColor(DEFAULT_COLOR);
@@ -35,16 +38,8 @@ public:
         text.setStyle(sf::Text::Bold);
     }
 
-    std::string getStatus(){
-        switch (status)
-        {
-            case Status::Hover:
-                return "Hover";
-            case Status::Clicked:
-                return "Clicked";
-            default:
-                return "Default";
-        }
+    Status getStatus(){
+        return status;
     }
 
     void updateStatus(Status newStatus)
@@ -55,6 +50,7 @@ public:
             case Status::Hover:
                 box.setFillColor(ON_HOVER_COLOR);
                 break;
+            case Status::Disabled:
             case Status::Clicked:
                 box.setFillColor(ON_CLICKED_COLOR);
                 break;
@@ -66,6 +62,10 @@ public:
 
     bool mouseIsOver(const sf::Vector2f& mousePosition){
         return box.getGlobalBounds().contains(mousePosition);
+    }
+
+    void callFunction(){
+        functionOnClick();
     }
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override

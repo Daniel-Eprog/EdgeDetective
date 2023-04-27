@@ -1,6 +1,7 @@
 /*Edge Detective - general purpose c++ library for edge detecting needs*/
 
 #include "tgaimg.h"
+#include "menu.h"
 #include <string>
 #include <ctime>
 
