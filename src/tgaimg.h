@@ -1,9 +1,8 @@
-#ifndef TGAIMG_H
-#define TGAIMG_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include <iostream>
 #include <algorithm>
-#include <map>
 #include <iomanip>
 #include <fstream>
 #include <vector>
@@ -11,7 +10,7 @@
 
 using namespace std;
 
-class TGAimg
+class Image
 {
 
     public:
@@ -59,8 +58,9 @@ class TGAimg
         void gaussianBlur(); //applies blur to reduce noise
 
         //Initial Edgedetection kernels
-        void prewittEdgeDetection();
-        void sobelEdgeDetection();
+        void prewittEdgeDetection(); //convolve using prewitt kernel
+        void sobelEdgeDetection(); //convolve using sobel kernel
+        void cannyEdgeDetection(); //convolve using sobel kernel and us methods for canny algorithm steps
 
         //canny algorithm steps
         void nonMaxSuppression();//narrows pixel fields based on the angle of intesity
@@ -73,8 +73,8 @@ class TGAimg
         private:
             IMGheader imageHeader; //stores header information in custom struct 
             vector<vector<Pixel>> image; //stores pixel information in map
-            vector<double> edgeAngles;
-
+            vector<double> edgeAngles; //stores the intensity edges after initial edge detection
+            bool imageLoaded = false; //determines if a image is loaded
 
 };
 
