@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "button.h"
+#include "tgaimg.cpp"
 using namespace sf;
 
 class Menu
