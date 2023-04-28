@@ -1,8 +1,9 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef TGAIMG_H
+#define TGAIMG_H
 
 #include <iostream>
 #include <algorithm>
+#include <map>
 #include <iomanip>
 #include <fstream>
 #include <vector>
@@ -10,7 +11,7 @@
 
 using namespace std;
 
-class Image
+class TGAimg
 {
 
     public:
@@ -47,9 +48,18 @@ class Image
             
         };
 
+        //copy constructor
+        TGAimg(const TGAimg& other) {
+            imageHeader = other.imageHeader;
+            image = vector<vector<Pixel>>(other.image);
+            edgeAngles = vector<double>(other.edgeAngles);
+        }
+
+        TGAimg() = default;
+
         //general functions for loading and exporting images
 
-        void loadIMG(string file);//loads image from TGA file
+        bool loadIMG(const string& file);//loads image from TGA file
         void exportIMG(string file) const;//exports an image as TGA file
         void getHeader() const; //prints header information
 
@@ -58,9 +68,8 @@ class Image
         void gaussianBlur(); //applies blur to reduce noise
 
         //Initial Edgedetection kernels
-        void prewittEdgeDetection(); //convolve using prewitt kernel
-        void sobelEdgeDetection(); //convolve using sobel kernel
-        void cannyEdgeDetection(); //convolve using sobel kernel and us methods for canny algorithm steps
+        void prewittEdgeDetection();
+        void sobelEdgeDetection();
 
         //canny algorithm steps
         void nonMaxSuppression();//narrows pixel fields based on the angle of intesity
@@ -71,10 +80,10 @@ class Image
         vector<double> convolve(vector<vector<float>> convolutionKernel);
 
         private:
-            IMGheader imageHeader; //stores header information in custom struct 
+            IMGheader imageHeader{}; //stores header information in custom struct
             vector<vector<Pixel>> image; //stores pixel information in map
-            vector<double> edgeAngles; //stores the intensity edges after initial edge detection
-            bool imageLoaded = false; //determines if a image is loaded
+            vector<double> edgeAngles;
+
 
 };
 
