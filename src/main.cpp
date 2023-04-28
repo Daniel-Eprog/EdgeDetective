@@ -47,7 +47,7 @@ int main()
         {
                 cout << "Please enter the exact name of your image located in the input folder." << endl;
                 string fileName = "";
-                string input = "input/";
+                string input = "../input/";
                 cin >> fileName;
                 input += fileName;
                 start = clock();
@@ -207,7 +207,7 @@ int main()
             {
                 cout << "Please enter the name you wish for your exported image." << endl;
                 string fileName = "";
-                string output = "output/";
+                string output = "../output/";
                 cin >> fileName;
                 output += fileName;
                 start = clock();

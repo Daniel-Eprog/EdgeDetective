@@ -1,7 +1,7 @@
 #include "tgaimg.h"
 
 //loads image from TGA file
-void TGAimg::loadIMG(string file)
+bool TGAimg::loadIMG(string file)
 {
     //if image already loaded clears the image vector
     if(imageLoaded == true)
@@ -62,6 +62,8 @@ void TGAimg::loadIMG(string file)
 
     //close image file
     fileToOpen.close();
+
+    return true;
 
 }
 

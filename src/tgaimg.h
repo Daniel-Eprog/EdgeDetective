@@ -49,7 +49,7 @@ class TGAimg
 
         //general functions for loading and exporting images
 
-        void loadIMG(string file);//loads image from TGA file
+        bool loadIMG(string file);//loads image from TGA file
         void exportIMG(string file) const;//exports an image as TGA file
         void getHeader() const; //prints header information
 
