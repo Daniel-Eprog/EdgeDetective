@@ -1,12 +1,13 @@
 #include "tgaimg.h"
 
 //loads image from TGA file
-void Image::loadIMG(string file)
+void Photo::loadIMG(string file)
 {
     //if image already loaded clears the image vector
     if(imageLoaded == true)
     {
         this->image.clear();
+        this->originalImage.clear();
     }
 
     //read in file
@@ -51,6 +52,7 @@ void Image::loadIMG(string file)
 
         //pushes back current row and empties vector for next iteration
         this->image.push_back(nextRow);
+        this->originalImage.push_back(nextRow);
         nextRow = {};
     }
 
@@ -66,7 +68,7 @@ void Image::loadIMG(string file)
 }
 
 //prints out header information
-void Image::getHeader() const
+void Photo::getHeader() const
 {
     cout << "ID Length: " << (int)imageHeader.idLength << endl;
     cout << "Color Map Type: " << (int)imageHeader.colorMapType << endl;
@@ -83,7 +85,7 @@ void Image::getHeader() const
 }
 
 //exports image as TGA file
-void Image::exportIMG(string file) const
+void Photo::exportIMG(string file) const
 {
     //goes through image header and writes out to file
     ofstream fileToWrite(file, ios_base::binary);
@@ -113,7 +115,7 @@ void Image::exportIMG(string file) const
 }
 
 //convolution method for applying filters to current image
-vector<double> Image::convolve(vector<vector<float>> convolutionKernel)
+vector<double> Photo::convolve(vector<vector<float>> convolutionKernel)
 {
 
     //stores the value of the new image
@@ -246,7 +248,7 @@ vector<double> Image::convolve(vector<vector<float>> convolutionKernel)
 }
 
 //iterates over image and converts pixels to their grayscale value
-void Image::convertGrayScale()
+void Photo::convertGrayScale()
 {
     //stores new grayscale value
     float grayScaleValue = 0;
@@ -268,7 +270,7 @@ void Image::convertGrayScale()
 }
 
 //gaussian blur is applied to your image to reduce noise
-void Image::gaussianBlur()
+void Photo::gaussianBlur()
 {
     vector<double> blurredImage; //stores the new values of the blurred image
     //gaussian kernel blends the image on convolution by determining pixel intensity based on the
@@ -294,7 +296,7 @@ void Image::gaussianBlur()
 }
 
 //prewitt kernel for general edge detection
-void Image::prewittEdgeDetection()
+void Photo::prewittEdgeDetection()
 {
     vector<double> Gx = {}; //stores the magnitude of horizontal edges
     vector<double> Gy = {}; //stores the magnitude of the vertical edges
@@ -356,10 +358,13 @@ void Image::prewittEdgeDetection()
         }
     }
 
+    this->prewitt = true;
+    this->canny = false;
+
 }
 
 //sobel kernel for general edge detection
-void Image::sobelEdgeDetection()
+void Photo::sobelEdgeDetection()
 {
     vector<double> Gx = {}; //stores the magnitude of horizontal edges
     vector<double> Gy = {}; //stores the magnitude of the vertical edges
@@ -420,7 +425,7 @@ void Image::sobelEdgeDetection()
 }
 
 //uses the angle of pixel intesities to calculate and thin out pixel fields
-void Image::nonMaxSuppression() {
+void Photo::nonMaxSuppression() {
 
     // This function will use the angle of each edge and evaluate the pixels on both sides in the direction it is facing
     // If a pixel has a higher magnitude than the surrounding pixels then it will be used in the image, if not then 0 will be used.
@@ -1011,7 +1016,7 @@ void Image::nonMaxSuppression() {
 }
 
 //reduces the image into two pixel values strong and weak to further differentiate edges
-void Image::doubleThreshold()
+void Photo::doubleThreshold()
 {
     float lowThresholdRatio = 0.1; //sets the ratio for low end threshold
     float highThresholdRatio = 0.15; //sets the ratior for high end threshold
@@ -1073,7 +1078,7 @@ void Image::doubleThreshold()
 }
 
 //condenses pixels together based on their surrounding pixel values
-void Image::hysteresis()
+void Photo::hysteresis()
 {
 
     //iterates over the image and checks all weak pixels for adjacent strong pixels
@@ -1283,11 +1288,41 @@ void Image::hysteresis()
 }
 
 //canny edge detection calls all preceding steps
-void Image::cannyEdgeDetection()
+void Photo::cannyEdgeDetection()
 {
     this->gaussianBlur(); //applies gaussian blur
     this->sobelEdgeDetection(); //applies sobel edge detection
     this->nonMaxSuppression(); //applies nonmaxsuppression
     this->doubleThreshold(); //applies thresholding
     this->hysteresis(); //applies hysteresis
+    this->canny = true;
+    this->prewitt = false;
+}
+
+void Photo::revertImage()
+{
+    //keeps count of 1D image position
+    int count = 0;
+    //iterates over the image and sets each pixel equal to the original value
+    for(int i = 0; i < this->imageHeader.height; ++i)
+    {
+        for(int j = 0; j < this->imageHeader.width; ++j)
+        {
+            this->image[i][j].red = this->originalImage[i][j].red;
+            this->image[i][j].blue = this->originalImage[i][j].blue;
+            this->image[i][j].green = this->originalImage[i][j].green;
+            count += 1;
+        }
+    }
+
+    this->prewitt = false;
+    this->canny = false;
+}
+
+bool Photo::getPrewitt() {
+    return prewitt;
+}
+
+bool Photo::getCanny() {
+    return canny;
 }

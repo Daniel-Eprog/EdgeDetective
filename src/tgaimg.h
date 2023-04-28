@@ -10,7 +10,7 @@
 
 using namespace std;
 
-class Image
+class Photo
 {
 
     public:
@@ -52,6 +52,9 @@ class Image
         void loadIMG(string file);//loads image from TGA file
         void exportIMG(string file) const;//exports an image as TGA file
         void getHeader() const; //prints header information
+        void revertImage(); //This function reverts a processed image back to the original state
+        bool getPrewitt();
+        bool getCanny();
 
         //Preruquiste functions
         void convertGrayScale(); //converts the desired image into grayscale
@@ -73,8 +76,11 @@ class Image
         private:
             IMGheader imageHeader; //stores header information in custom struct 
             vector<vector<Pixel>> image; //stores pixel information in map
+            vector<vector<Pixel>> originalImage; //A copy of the original image
             vector<double> edgeAngles; //stores the intensity edges after initial edge detection
-            bool imageLoaded = false; //determines if a image is loaded
+            bool imageLoaded = false; //determines if an image is loaded
+            bool prewitt = false;
+            bool canny = false;
 
 };
 
