@@ -8,13 +8,13 @@
 int main()
 {
     //program variables
-    bool stillDetecting = true; //determines whether a user is done or not
+    bool stillDetecting = false; //determines whether a user is done or not
     bool imageLoaded = false; //determines if an image has been loaded
     int response; //stores user response
     float start = 0.0; //variable to store start time of function
     float end = 0.0; //variable to store end time of function
     float executionTime = 0.0f; //variable to store total execution time
-    Image processingImage; //class object to hold image being processed
+    Photo processingImage; //class object to hold image being processed
 
     //Welcome message
     cout << "***************************************************" << endl;
@@ -22,6 +22,9 @@ int main()
     cout << "*  Your one stop shop c++ edge detection library  *" << endl;
     cout << "*              Load an image to begin             *" << endl;
     cout << "***************************************************" << endl;
+
+    Menu menu;
+    menu.openMenu();
 
     while(stillDetecting)
     {

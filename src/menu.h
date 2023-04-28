@@ -12,7 +12,7 @@ public:
 
     static const unsigned int IMAGE_SIZE = 520;
 
-    static TGAimg imageFile;
+    static Photo imageFile;
     static string imageName;
     static vector<Button> buttonsList;
     static vector<Text> textboxList;
@@ -80,7 +80,29 @@ public:
                     case Event::MouseButtonReleased:
                         mouseReleasedThisFrame = true;
                         break;
-                    ///TODO: GET USER KEYBOARD INPUT TO PUT INTO THE STRING "imageName"
+                    case Event::TextEntered:
+                    {
+                        int fileNameLength = imageName.size();
+                        unsigned int unicode = event.text.unicode;
+
+                        // 8 in unicode is the Backspace. If this is pressed the last letter is erased
+                        if (unicode == 8){
+
+                            // Before erasing we must check if the string is empty
+                            if(fileNameLength > 0){
+                                imageName.erase(fileNameLength-1, 1);
+                            }
+
+                        }
+                        //Unicode between 32 and 126 represents Letters, Numbers, and special Characters
+                        else if (unicode >= 32 && unicode <= 126){
+                            imageName += (char)unicode;
+                        }
+                        else{
+
+                        }
+
+                    }
                     default:
                         break;
                 }
@@ -169,16 +191,35 @@ public:
     static void saveFile()
     {
         cout << "saveFile" << endl;
-        imageFile.exportIMG("../output/" + imageName);
+
+        if(imageFile.getPrewitt()){
+            imageName += "_Prewitt";
+            imageFile.exportIMG("../output/" + imageName);
+            imageName.erase(imageName.size()-1, 8);
+        }
+        else if(imageFile.getCanny()){
+            imageName += "_Canny";
+            imageFile.exportIMG("../output/" + imageName);
+            imageName.erase(imageName.size()-1, 6);
+        }
+
     }
 
     static void applyPrewittEdgeDetection()
     {
+
         buttonsList[2].updateStatus(Button::Status::Disabled); //Disable to prevent processing again
         buttonsList[1].updateStatus(Button::Status::Default); //Enable Save
         buttonsList[3].updateStatus(Button::Status::Default); //Enable Canny
-        ///TODO: CALL ALL THE FUNCTIONS
+
+        if(imageFile.getCanny()){
+            imageFile.revertImage();
+            ///TODO: Clear Post Process Texture
+        }
+
         imageFile.convertGrayScale();
+        imageFile.gaussianBlur();
+        imageFile.prewittEdgeDetection();
         displayPostProcessImage();
     }
 
@@ -187,15 +228,21 @@ public:
         buttonsList[3].updateStatus(Button::Status::Disabled); //Lock to prevent processing again
         buttonsList[1].updateStatus(Button::Status::Default); //Enable Save
         buttonsList[2].updateStatus(Button::Status::Default); //Enable Canny
-        ///TODO: CALL ALL THE FUNCTIONS
+
+        if(imageFile.getPrewitt()){
+            imageFile.revertImage();
+            ///TODO: Clear Post Process Texture
+        }
+
         imageFile.convertGrayScale();
+        imageFile.cannyEdgeDetection();
         displayPostProcessImage();
     }
 
 };
 
-TGAimg Menu::imageFile = TGAimg();
-string Menu::imageName = "car.tga";
+Photo Menu::imageFile = Photo();
+string Menu::imageName;
 vector<Button> Menu::buttonsList = vector<Button>();
 vector<Text> Menu::textboxList = vector<Text>();
 vector<RectangleShape> Menu::dividersList = vector<RectangleShape>();
